@@ -12,4 +12,16 @@ This project automatically summarizes BBC news articles using NLP and evaluates 
 ## How to Run
 
 1. Install dependencies:
+2. 2. Run the script:
+3. The script will print:
+- Original article (first 500 characters)
+- Generated summary
+- Human summary
+- ROUGE-1, ROUGE-2, ROUGE-L scores
+
+## Notes
+
+- Make sure your `BBC News Summary` folder is in the same directory as `app.py`.
+- This project works with 3 articles by default (you can change the limit in the code).
+
 
