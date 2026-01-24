@@ -1,1 +1,7 @@
+transformers
+rouge-score
+torch  # if using HuggingFace
+
+pip install -r requirements.txt
+python app.py
 
