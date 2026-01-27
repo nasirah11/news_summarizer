@@ -1,3 +1,8 @@
+streamlit
+transformers
+torch
+sentencepiece
+
 transformers
 torch
 rouge-score
