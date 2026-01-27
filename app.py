@@ -1,53 +1,3 @@
-!pip install transformers sentencepiece nltk rouge-score
-
-from transformers import T5Tokenizer, T5ForConditionalGeneration
-import nltk
-from rouge_score import rouge_scorer
-
-nltk.download('punkt')
-
-model_name = "t5-small"
-
-tokenizer = T5Tokenizer.from_pretrained(model_name)
-model = T5ForConditionalGeneration.from_pretrained(model_name)
-
-print("Model loaded successfully!")
-
-def generate_summary(text, max_len=80, min_len=30):
-    input_text = "summarize: " + text
-
-    inputs = tokenizer.encode(
-        input_text,
-        return_tensors="pt",
-        max_length=512,
-        truncation=True
-    )
-
-    summary_ids = model.generate(
-        inputs,
-        max_length=max_len,
-        min_length=min_len,
-        length_penalty=2.0,
-        num_beams=4,
-        early_stopping=True
-    )
-
-    summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
-    return summary
-
-article_text = """
-The government has announced a new policy aimed at improving digital education in schools.
-The initiative will provide funding for technology infrastructure and teacher training.
-Officials believe the program will enhance learning outcomes and reduce the digital divide.
-Several education experts welcomed the move, stating that digital skills are essential for future careers.
-However, some critics argued that rural schools may still face challenges in accessing high-speed internet.
-"""
-
-summary = generate_summary(article_text)
-
-print("ORIGINAL ARTICLE:\n", article_text)
-print("\nGENERATED SUMMARY:\n", summary)
-
 !unzip "BBC News Summary.zip"
 
 import os
@@ -91,43 +41,83 @@ print("Total loaded:", len(articles))
 print("\nFirst article (short):\n", articles[0][:500])
 print("\nReference summary:\n", references[0])
 
+import re
+
+def clean_text(text):
+    # Lowercase
+    text = text.lower()
+
+    # Remove punctuation & special characters
+    text = re.sub(r'[^a-z0-9\s]', '', text)
+
+    # Remove extra spaces
+    text = re.sub(r'\s+', ' ', text)
+
+    return text.strip()
+
+clean_articles = [clean_text(a) for a in articles]
+clean_references = [clean_text(s) for s in references]
+
+print("BEFORE CLEANING:\n", articles[0][:200])
+print("\nAFTER CLEANING:\n", clean_articles[0][:200])
+
+!pip install transformers
+
 from transformers import pipeline
 
-# Load summarization pipeline
-summarizer = pipeline("summarization")
+summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
 
-# Summarize the first article
-summary_result = summarizer(articles[0], max_length=100, min_length=30, do_sample=False)
-print("Generated summary:\n", summary_result[0]['summary_text'])
+generated_summaries = []
 
-print("Human summary:\n", references[0])
+for i, article in enumerate(clean_articles):
+    summary = summarizer(
+        article[:1024],      # limit length (important!)
+        max_length=150,
+        min_length=60,
+        do_sample=False
+    )[0]['summary_text']
+
+    generated_summaries.append(summary)
+
+    print(f"\nARTICLE {i+1}")
+    print("GENERATED SUMMARY:\n", summary)
+    print("\nREFERENCE SUMMARY:\n", clean_references[i])
+
+!pip install rouge-score
 
 from rouge_score import rouge_scorer
 
 scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
-scores = scorer.score(references[0], summary_result[0]['summary_text'])
-print(scores)
 
-from transformers import pipeline
-from rouge_score import rouge_scorer
+for i in range(len(generated_summaries)):
+    scores = scorer.score(clean_references[i], generated_summaries[i])
 
-# Load summarization pipeline
-summarizer = pipeline("summarization")
-scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
+    print(f"\nARTICLE {i+1} ROUGE SCORES")
+    print("ROUGE-1 F1:", scores['rouge1'].fmeasure)
+    print("ROUGE-2 F1:", scores['rouge2'].fmeasure)
+    print("ROUGE-L F1:", scores['rougeL'].fmeasure)
 
-# Loop through all articles
-for i, article in enumerate(articles):
-    print(f"\n--- Article {i+1} ---")
-    
-    # Generate summary
-    summary_result = summarizer(article, max_length=100, min_length=30, do_sample=False)
-    generated_summary = summary_result[0]['summary_text']
-    
-    # Print summaries
-    print("Generated summary:\n", generated_summary)
-    print("Human summary:\n", references[i])
-    
-    # Calculate ROUGE
-    scores = scorer.score(references[i], generated_summary)
-    print("ROUGE scores:\n", scores)
+for i in range(len(generated_summaries)):
+    print("\n==============================")
+    print(f"ARTICLE {i+1}")
+    print("GENERATED SUMMARY:\n", generated_summaries[i])
+    print("\nREFERENCE SUMMARY:\n", clean_references[i])
 
+results = []
+
+for i in range(len(generated_summaries)):
+    scores = scorer.score(clean_references[i], generated_summaries[i])
+
+    results.append({
+        "Article": i+1,
+        "ROUGE-1": scores['rouge1'].fmeasure,
+        "ROUGE-2": scores['rouge2'].fmeasure,
+        "ROUGE-L": scores['rougeL'].fmeasure
+    })
+
+results
+
+import pandas as pd
+
+df = pd.DataFrame(results)
+df
