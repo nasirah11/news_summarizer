@@ -1,27 +1,38 @@
-# BBC News Summarizer Project
+# BBC News Article Summarization using Transformer Model
 
-This project automatically summarizes BBC news articles using NLP and evaluates the summaries using ROUGE scores.
+This project implements an automatic news article summarization system using a pretrained transformer-based model (BART). The system generates abstractive summaries from news articles and evaluates the results using ROUGE metrics.
 
-## Folder Structure
+## Dataset
+The BBC News Summary dataset is used in this project.  
+Download from: https://www.kaggle.com/datasets/pariza/bbc-news-summary  
 
-- `BBC News Summary/News Articles/` : Original news articles
-- `BBC News Summary/Summaries/` : Human-written summaries
-- `app.py` : Main Python script that loads articles, generates summaries, and calculates ROUGE
-- `requirements.txt` : Python packages needed
+After downloading, extract the folder and place it in the project directory as:
+
+BBC News Summary/
+ ├── News Articles/
+ └── Summaries/
+
+## Requirements
+
+Install dependencies using:
+
+pip install -r requirements.txt
 
 ## How to Run
 
-1. Install dependencies:
-2. 2. Run the script:
-3. The script will print:
-- Original article (first 500 characters)
-- Generated summary
-- Human summary
-- ROUGE-1, ROUGE-2, ROUGE-L scores
+1. Ensure the dataset folder is placed correctly.
+2. Run the program:
 
-## Notes
+python main.py
 
-- Make sure your `BBC News Summary` folder is in the same directory as `app.py`.
-- This project works with 3 articles by default (you can change the limit in the code).
+## Output
 
+The program will:
+- Load and clean the news articles
+- Generate summaries using BART
+- Evaluate results using ROUGE-1, ROUGE-2, and ROUGE-L
+- Display the evaluation table
 
+## Author
+Ra
+Final Year Project – Automatic Text Summarization
