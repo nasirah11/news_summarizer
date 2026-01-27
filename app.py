@@ -1,6 +1,5 @@
 import streamlit as st
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-import torch
 
 # Load model and tokenizer (only once)
 @st.cache_resource
@@ -14,15 +13,30 @@ tokenizer, model = load_model()
 
 # App title
 st.title("📰 News Article Summarizer")
-st.write("Paste a news article below and click **Summarize** to generate a short summary.")
+st.write("You can paste a news article OR upload a text file, then click **Summarize**.")
 
-# Input text
-article_text = st.text_area("Enter News Article Text Here:", height=300)
+# Option selection
+option = st.radio("Choose input method:", ["Paste Text", "Upload Text File"])
 
-# Button
+article_text = ""
+
+# Paste text option
+if option == "Paste Text":
+    article_text = st.text_area("Enter News Article Text Here:", height=300)
+
+# Upload file option
+elif option == "Upload Text File":
+    uploaded_file = st.file_uploader("Upload a .txt file containing a news article", type=["txt"])
+
+    if uploaded_file is not None:
+        article_text = uploaded_file.read().decode("utf-8")
+        st.subheader("📄 Uploaded Article Preview")
+        st.write(article_text[:1000] + "...")
+
+# Summarize button
 if st.button("Summarize"):
     if article_text.strip() == "":
-        st.warning("Please paste a news article first.")
+        st.warning("Please provide a news article first.")
     else:
         with st.spinner("Generating summary... Please wait ⏳"):
 
