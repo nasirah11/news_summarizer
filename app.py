@@ -1,5 +1,6 @@
 import streamlit as st
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import pdfplumber
 
 # Load model and tokenizer (only once)
 @st.cache_resource
@@ -13,10 +14,10 @@ tokenizer, model = load_model()
 
 # App title
 st.title("📰 News Article Summarizer")
-st.write("You can paste a news article OR upload a text file, then click **Summarize**.")
+st.write("Paste a news article OR upload a PDF file, then click **Summarize**.")
 
 # Option selection
-option = st.radio("Choose input method:", ["Paste Text", "Upload Text File"])
+option = st.radio("Choose input method:", ["Paste Text", "Upload PDF File"])
 
 article_text = ""
 
@@ -24,13 +25,16 @@ article_text = ""
 if option == "Paste Text":
     article_text = st.text_area("Enter News Article Text Here:", height=300)
 
-# Upload file option
-elif option == "Upload Text File":
-    uploaded_file = st.file_uploader("Upload a .txt file containing a news article", type=["txt"])
+# Upload PDF option
+elif option == "Upload PDF File":
+    uploaded_file = st.file_uploader("Upload a PDF file containing a news article", type=["pdf"])
 
     if uploaded_file is not None:
-        article_text = uploaded_file.read().decode("utf-8")
-        st.subheader("📄 Uploaded Article Preview")
+        with pdfplumber.open(uploaded_file) as pdf:
+            pages = [page.extract_text() for page in pdf.pages]
+            article_text = " ".join([p for p in pages if p is not None])
+
+        st.subheader("📄 Extracted Article Preview")
         st.write(article_text[:1000] + "...")
 
 # Summarize button
