@@ -34,5 +34,5 @@ The program will:
 - Display the evaluation table
 
 ## Author
-Ra
+Siti Nasirah Binti Abdul Rashid, S23B0142
 Final Year Project – Automatic Text Summarization
