@@ -2,18 +2,7 @@ import streamlit as st
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import pdfplumber
 
-# -----------------------------
-# Page configuration
-# -----------------------------
-st.set_page_config(
-    page_title="News Article Summarizer",
-    page_icon="📰",
-    layout="centered"
-)
-
-# -----------------------------
-# Load model (cached)
-# -----------------------------
+# Load model and tokenizer (only once)
 @st.cache_resource
 def load_model():
     model_name = "facebook/bart-large-cnn"
@@ -23,75 +12,38 @@ def load_model():
 
 tokenizer, model = load_model()
 
-# -----------------------------
-# Header
-# -----------------------------
+# App title
 st.title("📰 News Article Summarizer")
-st.markdown(
-    """
-    A simple **Natural Language Processing (NLP) application** that automatically  
-    generates concise summaries from news articles using a transformer model.
-    """
-)
+st.write("Paste a news article OR upload a PDF file, then click **Summarize**.")
 
-st.divider()
+# Option selection
+option = st.radio("Choose input method:", ["Paste Text", "Upload PDF File"])
 
-# -----------------------------
-# Sidebar (Input Options)
-# -----------------------------
-st.sidebar.header("⚙️ Input Options")
-input_method = st.sidebar.radio(
-    "Choose how you want to provide the news article:",
-    ["Paste Text", "Upload PDF"]
-)
-
-st.sidebar.markdown(
-    """
-    **Supported formats:**
-    - Paste plain text  
-    - Upload a PDF news article  
-
-    
-)
-
-# -----------------------------
-# Main Input Area
-# -----------------------------
 article_text = ""
 
-if input_method == "Paste Text":
-    st.subheader("📄 Paste News Article")
-    article_text = st.text_area(
-        "Paste the full news article text below:",
-        height=280,
-        placeholder="Paste your news article here..."
-    )
+# Paste text option
+if option == "Paste Text":
+    article_text = st.text_area("Enter News Article Text Here:", height=300)
 
-elif input_method == "Upload PDF":
-    st.subheader("📑 Upload PDF News Article")
-    uploaded_file = st.file_uploader(
-        "Upload a PDF file",
-        type=["pdf"]
-    )
+# Upload PDF option
+elif option == "Upload PDF File":
+    uploaded_file = st.file_uploader("Upload a PDF file containing a news article", type=["pdf"])
 
     if uploaded_file is not None:
         with pdfplumber.open(uploaded_file) as pdf:
             pages = [page.extract_text() for page in pdf.pages]
-            article_text = " ".join([p for p in pages if p])
+            article_text = " ".join([p for p in pages if p is not None])
 
-        st.markdown("**Extracted Text Preview:**")
-        st.info(article_text[:1000] + "...")
+        st.subheader("📄 Extracted Article Preview")
+        st.write(article_text[:1000] + "...")
 
-# -----------------------------
-# Summarize Button
-# -----------------------------
-st.divider()
-
-if st.button("✨ Generate Summary"):
+# Summarize button
+if st.button("Summarize"):
     if article_text.strip() == "":
-        st.warning("Please provide a news article before summarizing.")
+        st.warning("Please provide a news article first.")
     else:
-        with st.spinner("Generating summary, please wait... ⏳"):
+        with st.spinner("Generating summary... Please wait ⏳"):
+
             inputs = tokenizer(
                 article_text,
                 return_tensors="pt",
@@ -108,18 +60,8 @@ if st.button("✨ Generate Summary"):
                 early_stopping=True
             )
 
-            summary = tokenizer.decode(
-                summary_ids[0],
-                skip_special_tokens=True
-            )
+            summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
 
+        # Output
         st.subheader("✂️ Generated Summary")
         st.success(summary)
-
-# -----------------------------
-# Footer
-# -----------------------------
-st.divider()
-st.caption(
-    "Developed as an academic NLP project using Streamlit and BART transformer model."
-)
