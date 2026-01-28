@@ -51,8 +51,7 @@ st.sidebar.markdown(
     - Paste plain text  
     - Upload a PDF news article  
 
-    This application is for **academic demonstration purposes**.
-    """
+    
 )
 
 # -----------------------------
